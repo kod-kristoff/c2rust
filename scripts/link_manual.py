@@ -39,7 +39,7 @@ def _main() -> None:
                 print('Warning: File already exists, not overwriting: ', symlink_path)
                 continue
 
-            print('Creating symlink: {} -> {}'.format(symlink_path, f))
+            print(f'Creating symlink: {symlink_path} -> {f}')
             os.makedirs(os.path.dirname(symlink_path), exist_ok=True)
             os.symlink(symlink_target, symlink_path)
         

@@ -30,10 +30,10 @@ def do_impl(s, field_name):
     yield 'impl GetSpan for %s {' % s.name
     yield '  fn get_span(&self) -> Span {'
     if 'extend_span' not in s.attrs:
-        yield '    self.%s' % field_name
+        yield f'    self.{field_name}'
     else:
         attr_field = s.attrs['extend_span'] or 'attrs'
-        yield '    extend_span_attrs(self.%s, &self.%s)' % (field_name, attr_field)
+        yield f'    extend_span_attrs(self.{field_name}, &self.{attr_field})'
     yield '  }'
     yield '}'
 
@@ -41,26 +41,19 @@ def find_span_field(s):
     if 'no_span' in s.attrs:
         return None
 
-    marked_fields = []
-    for f in s.fields:
-        if 'span' in f.attrs:
-            marked_fields.append(f.name)
+    marked_fields = [f.name for f in s.fields if 'span' in f.attrs]
     if len(marked_fields) == 1:
         return marked_fields[0]
     elif len(marked_fields) > 1:
         raise ValueError('struct %s has %d fields marked #[span] (expected 0 or 1)' %
                 (s.name, len(marked_fields)))
 
-    for f in s.fields:
-        if f.name == 'span':
-            return f.name
-
-    return None
+    return next((f.name for f in s.fields if f.name == 'span'), None)
 
 @linewise
 def generate(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:

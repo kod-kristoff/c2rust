@@ -19,7 +19,7 @@ def list_rec(se, target):
     for v, path in variants_paths(se):
         yield '  &%s => {' % struct_pattern(v, path)
         for f in v.fields:
-            yield '    ListNodeIds::add_node_ids(%s, node_id_list);' % (f.name,)
+            yield f'    ListNodeIds::add_node_ids({f.name}, node_id_list);'
         yield '  }'
     yield '}'
 
@@ -44,7 +44,7 @@ def dummy_impl(se):
 @linewise
 def generate(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:

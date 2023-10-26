@@ -44,10 +44,10 @@ def match_path(src_name, ref_name):
 
 
 def load(name):
-    with open(os.path.join(src_dir, name + '.facts')) as f:
+    with open(os.path.join(src_dir, f'{name}.facts')) as f:
         src_rows = [[ast.literal_eval(s) for s in line.strip().split('\t')]
                 for line in f]
-    with open(os.path.join(ref_dir, name + '.facts')) as f:
+    with open(os.path.join(ref_dir, f'{name}.facts')) as f:
         ref_rows = [[ast.literal_eval(s) for s in line.strip().split('\t')]
                 for line in f]
     return src_rows, ref_rows
@@ -118,8 +118,7 @@ for name in os.listdir(src_dir):
     if name.startswith('.') or not name.endswith('.facts'):
         continue
 
-    with open(os.path.join(src_dir, name)) as src, \
-            open(os.path.join(dest_dir, name), 'w') as dest:
+    with (open(os.path.join(src_dir, name)) as src, open(os.path.join(dest_dir, name), 'w') as dest):
         for line in src:
             src_parts = [ast.literal_eval(s) for s in line.strip().split('\t')]
             dest_parts = []
@@ -132,8 +131,8 @@ for name in os.listdir(src_dir):
                 if dest_part is None:
                     print('error: no mapping for %r (used in %s: %r)' % (
                         part, name, src_parts))
-                    dest_part = 'OLD:' + part
+                    dest_part = f'OLD:{part}'
                 dest_parts.append(dest_part)
 
-            dest.write('\t'.join('"%s"' % part for part in dest_parts) + '\n')
+            dest.write('\t'.join(f'"{part}"' for part in dest_parts) + '\n')
 

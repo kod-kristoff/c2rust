@@ -51,24 +51,22 @@ def annot_to_deltas(annot: Annot[T]) -> List[Point[Tuple[Optional[T], Optional[T
     if len(annot) == 0:
         return []
 
-    result = []
-
     # The first span's start and the last span's end are special cases, since
     # they have no previous/next span to compare against.
     first = annot[0]
-    result.append(Point(first.start, (None, first.label)))
-
-    for (s1, s2) in zip(annot, annot[1:]):
+    result = [Point(first.start, (None, first.label))]
+    for s1, s2 in zip(annot, annot[1:]):
         if s1.end == s2.start:
             # These spans are adjacent.  Record a transition directly from one
             # to the next at their shared boundary.
             result.append(Point(s1.end, (s1.label, s2.label)))
         else:
-            # There is a gap between spans.  Record transitions to `None` and
-            # back.
-            result.append(Point(s1.end, (s1.label, None)))
-            result.append(Point(s2.start, (None, s2.label)))
-
+            result.extend(
+                (
+                    Point(s1.end, (s1.label, None)),
+                    Point(s2.start, (None, s2.label)),
+                )
+            )
     # Note this works even when `len(annot) == 1` and thus `last is first`.
     last = annot[-1]
     result.append(Point(last.end, (last.label, None)))
@@ -82,7 +80,7 @@ def merge_points(p1: List[Point[T]], p2: List[Point[T]],
     and `p2` have points at the same position, the result will contain all the
     `p1` points at that position (in their original order), followed by all the
     ones from `p2`.'''
-    if len(args) > 0:
+    if args:
         acc = merge_points(p1, p2)
         for ps in args:
             acc = merge_points(acc, ps)

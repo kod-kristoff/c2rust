@@ -55,7 +55,7 @@ def diff_lines(old_lines: List[str], new_lines: List[str]) -> Iterator[DiffLine]
     buf = deque()
 
     for dl in difflib.ndiff(old_lines, new_lines):
-        prefix = dl[0:2]
+        prefix = dl[:2]
 
         if prefix == '  ':
             # Context line.  Flush the whole buffer.
@@ -235,9 +235,10 @@ def token_annot(line: Line) -> Annot[None]:
         if span.label == pygments.token.String or \
                 span.label in pygments.token.Comment:
             text = line.text[span.start : span.end]
-            for m in WORD_BREAK_RE.finditer(text):
-                extra_cuts.append(Point(span.start + m.start()))
-
+            extra_cuts.extend(
+                Point(span.start + m.start())
+                for m in WORD_BREAK_RE.finditer(text)
+            )
     return cut_annot_at_points(annot, extra_cuts)
 
 def calc_tokenized_intra(l1: Line, l2: Line) -> Tuple[Annot[str], Annot[str]]:
@@ -371,7 +372,7 @@ def split_hunks(blocks: List[DiffBlock]) -> List[Hunk]:
 
     def flush():
         nonlocal cur
-        if len(cur) > 0:
+        if cur:
             hunks.append(Hunk(cur))
         cur = []
 
@@ -409,10 +410,7 @@ def build_diff_hunks(d: Diff, context_diff: bool=True):
             if f.keep_mark_lines is not None:
                 keep = merge_annot(keep, f.keep_mark_lines)
         else:
-            if len(f.line_annot) > 0:
-                keep = [Span(0, f.line_annot[-1].end)]
-            else:
-                keep = []
+            keep = [Span(0, f.line_annot[-1].end)] if len(f.line_annot) > 0 else []
         if f.drop_irrelevant_lines is not None:
             keep = sub_annot(keep, f.drop_irrelevant_lines)
 
@@ -483,12 +481,18 @@ def hunk_output_lines(h: Hunk) -> List[OutputLine]:
     result = []
     for changed, old_span, new_span in h.blocks:
         common_lines = min(len(old_span), len(new_span))
-        for i in range(0, common_lines):
-            result.append(OutputLine(changed, old_span.start + i, new_span.start + i))
-        for i in range(common_lines, len(old_span)):
-            result.append(OutputLine(changed, old_span.start + i, None))
-        for i in range(common_lines, len(new_span)):
-            result.append(OutputLine(changed, None, new_span.start + i))
+        result.extend(
+            OutputLine(changed, old_span.start + i, new_span.start + i)
+            for i in range(0, common_lines)
+        )
+        result.extend(
+            OutputLine(changed, old_span.start + i, None)
+            for i in range(common_lines, len(old_span))
+        )
+        result.extend(
+            OutputLine(changed, None, new_span.start + i)
+            for i in range(common_lines, len(new_span))
+        )
     return result
 
 def build_output_lines(d: Diff):

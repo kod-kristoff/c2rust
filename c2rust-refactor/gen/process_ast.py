@@ -37,7 +37,7 @@ def tokenize(s):
 
         m = TOKEN_RE.match(s, i)
         if m is None or not m.group():
-            raise ValueError('bad input at offset %d: %r' % (i, s[i:i + 10] + '...'))
+            raise ValueError('bad input at offset %d: %r' % (i, f'{s[i:i + 10]}...'))
         elif m.group('keyword'):
             tokens.append(Keyword(m.group('keyword')))
         elif m.group('symbol'):
@@ -62,10 +62,7 @@ class Parser:
         return self.pos >= len(self.tokens)
 
     def peek(self):
-        if self.pos < len(self.tokens):
-            return self.tokens[self.pos]
-        else:
-            return EOF()
+        return self.tokens[self.pos] if self.pos < len(self.tokens) else EOF()
 
     def take(self):
         t = self.peek()
@@ -76,7 +73,7 @@ class Parser:
     def take_type(self, ty):
         t = self.take()
         if not isinstance(t, ty):
-            raise ValueError('expected %s, but got %s' % (ty.__name__, t,))
+            raise ValueError(f'expected {ty.__name__}, but got {t}')
         return t.text
 
     def take_keyword(self):
@@ -91,15 +88,13 @@ class Parser:
     def take_symbol_from(self, ss):
         s = self.take_type(Symbol)
         if s not in ss:
-            raise ValueError('expected one of %s, but got %s' % (list(ss), s))
+            raise ValueError(f'expected one of {list(ss)}, but got {s}')
         return s
 
 
     def peek_type(self, ty):
         t = self.peek()
-        if not isinstance(t, ty):
-            return None
-        return t.text
+        return None if not isinstance(t, ty) else t.text
 
     def peek_symbol(self):
         return self.peek_type(Symbol)

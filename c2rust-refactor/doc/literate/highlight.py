@@ -13,12 +13,11 @@ def highlight_file(f: File):
     each of its lines.'''
     # Annotate the entire file
     lexer = pygments.lexers.get_lexer_by_name('rust')
-    raw_annot = []
-    for start, token, token_text in lexer.get_tokens_unprocessed(f.text):
-        if token == pygments.token.Whitespace:
-            continue
-        raw_annot.append(Span(start, start + len(token_text), token))
-
+    raw_annot = [
+        Span(start, start + len(token_text), token)
+        for start, token, token_text in lexer.get_tokens_unprocessed(f.text)
+        if token != pygments.token.Whitespace
+    ]
     # Cut annotations into pieces, one per line.
     for line_span, line_annot in cut_annot(raw_annot, f.line_annot):
         f.lines[line_span.label].set_highlight(line_annot)
@@ -100,12 +99,12 @@ def token_css_class(tok: type(pygments.token.Token),
     '''Get the CSS class for a Pygments token type.'''
     # If the token is A.B.C, we first look for A.B.C, then A.B, then A.
     # Everything's a subtype of Token, so eventually we'll get a match.
-    if mode == 'hljs':
+    if mode == 'ace':
+        classes = ACE_CLASSES
+    elif mode == 'hljs':
         classes = HLJS_CLASSES
     elif mode == 'pygments':
         classes = pygments.token.STANDARD_TYPES
-    elif mode == 'ace':
-        classes = ACE_CLASSES
     else:
         raise ValueError('unknown highlighting mode %r' % mode)
 
@@ -113,11 +112,10 @@ def token_css_class(tok: type(pygments.token.Token),
         if tok in classes:
             if classes[tok] is None:
                 return None
-            if mode == 'hljs':
-                return 'hljs-' + classes[tok]
-            elif mode == 'ace':
-                cs = classes[tok]
-                return ' '.join('ace_%s' % c for c in cs)
+            if mode == 'ace':
+                return ' '.join(f'ace_{c}' for c in classes[tok])
+            elif mode == 'hljs':
+                return f'hljs-{classes[tok]}'
             else:
                 return classes[tok]
         else:

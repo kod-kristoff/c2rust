@@ -186,40 +186,34 @@ def diff_labels(l1: Set[str], l2: Set[str]) -> LabelChanges:
 def init_mark_labels(d: Diff):
     '''Diff the marks present in `d.old_files` and `d.new_files`, and use that
     to initialize `File.mark_labels` for both files.'''
-    old_marks = dict((m.orig_id, m) for m in d.old_file.marks.values())
-    new_marks = dict((m.orig_id, m) for m in d.new_file.marks.values())
+    old_marks = {m.orig_id: m for m in d.old_file.marks.values()}
+    new_marks = {m.orig_id: m for m in d.new_file.marks.values()}
 
-    old_labels = {}
-    for m in d.old_file.marks.values():
-        if m.orig_id in new_marks:
-            # There is a corresponding node marked in the new file.  Diff `m`'s
-            # labels with the ones for that new node.
-            old_labels[m.id] = diff_labels(m.labels, new_marks[m.orig_id].labels)
-        else:
-            # There is no corresponding node - the node (and its mark) must
-            # have been deleted.
-            old_labels[m.id] = ([], sorted(m.labels), [])
+    old_labels = {
+        m.id: diff_labels(m.labels, new_marks[m.orig_id].labels)
+        if m.orig_id in new_marks
+        else ([], sorted(m.labels), [])
+        for m in d.old_file.marks.values()
+    }
     d.old_file.set_mark_labels(old_labels)
 
-    new_labels = {}
-    for m in d.new_file.marks.values():
-        if m.orig_id in old_marks:
-            new_labels[m.id] = diff_labels(old_marks[m.orig_id].labels, m.labels)
-        else:
-            new_labels[m.id] = (sorted(m.labels), [], [])
+    new_labels = {
+        m.id: diff_labels(old_marks[m.orig_id].labels, m.labels)
+        if m.orig_id in old_marks
+        else (sorted(m.labels), [], [])
+        for m in d.new_file.marks.values()
+    }
     d.new_file.set_mark_labels(new_labels)
 
 
 def init_file_keep_mark_lines(f: File):
     '''Initialize `f.keep_mark_lines` with an annotation covering the start of
     each node where a mark was added or removed.'''
-    # Figure out which marks were changed - text for these will be kept in the
-    # output even if it's not part of any hunk's context.
-    keep_marks = set()
-    for node_id, (added, removed, kept) in f.mark_labels.items():
-        if len(added) > 0 or len(removed) > 0:
-            keep_marks.add(node_id)
-
+    keep_marks = {
+        node_id
+        for node_id, (added, removed, kept) in f.mark_labels.items()
+        if len(added) > 0 or len(removed) > 0
+    }
     # Get the start line for each kept mark.
     keep_start_lines = set()
     for u_start, u_end, node_id in f.unformatted_nodes:

@@ -38,7 +38,7 @@ def parse_blocks(f) -> List[Block]:
 
     def commit():
         nonlocal cur
-        if len(cur) > 0:
+        if cur:
             if code_attrs is not None:
                 blocks.append(Code(code_attrs, cur))
             else:

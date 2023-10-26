@@ -65,17 +65,17 @@ if __name__ == "__main__":
     setup_logging()
     args = parser.parse_args()
 
-    assert os.path.isfile(COMPILE_COMMANDS), "Could not find {}".format(COMPILE_COMMANDS)
+    assert os.path.isfile(COMPILE_COMMANDS), f"Could not find {COMPILE_COMMANDS}"
 
     # Build the tests first
-    print(Colors.OKBLUE + "Transpiling tests..." + Colors.NO_COLOR)
+    print(f"{Colors.OKBLUE}Transpiling tests...{Colors.NO_COLOR}")
     transpile(COMPILE_COMMANDS,
               filter='^(test|xmllint|runtest)',
               emit_build_files=False,
               cross_checks=args.cross_checks,
               cross_check_config=[CROSS_CHECK_CONFIG_YAML])
 
-    print(Colors.OKBLUE + "Transpiling rest of files..." + Colors.NO_COLOR)
+    print(f"{Colors.OKBLUE}Transpiling rest of files...{Colors.NO_COLOR}")
     transpile(COMPILE_COMMANDS,
               emit_build_files=True,
               cross_checks=args.cross_checks,
@@ -86,13 +86,13 @@ if __name__ == "__main__":
     mkdir_args = ["-p", RUST_EXAMPLES_DIR]
     retcode, stdout, stderr = mkdir[mkdir_args].run()
 
-    assert retcode != 1, "Could not make directory:\n{}".format(stderr)
+    assert retcode != 1, f"Could not make directory:\n{stderr}"
 
     # Move test files to examples directory (since they have their own main function)
-    mv_args = [os.path.join(LIBXML2_REPO, "%s.rs" % test) for test in TESTS]
+    mv_args = [os.path.join(LIBXML2_REPO, f"{test}.rs") for test in TESTS]
     mv_args.append(RUST_EXAMPLES_DIR)
     retcode, stdout, stderr = mv[mv_args].run()
 
-    assert retcode != 1, "Could not move translated rs files:\n{}".format(stderr)
+    assert retcode != 1, f"Could not move translated rs files:\n{stderr}"
 
-    print(Colors.OKGREEN + "Done!" + Colors.NO_COLOR)
+    print(f"{Colors.OKGREEN}Done!{Colors.NO_COLOR}")

@@ -35,11 +35,10 @@ def exhaustiveness_check(se, target):
 def comparison(se, method, target1, target2):
     yield 'match (%s, %s) {' % (target1, target2)
     for v, path in variants_paths(se):
-        yield '  (&%s,' % struct_pattern(v, path, '1')
+        yield f"  (&{struct_pattern(v, path, '1')},"
         yield '   &%s) => {' % struct_pattern(v, path, '2')
         for f in v.fields:
-            yield '    AstEquiv::%s(%s1, %s2) &&' % \
-                    (method, f.name, f.name)
+            yield f'    AstEquiv::{method}({f.name}1, {f.name}2) &&'
         yield '    true'
         yield '  }'
     yield '  (_, _) => false,'
@@ -89,22 +88,16 @@ def ignore_impl(d):
 @linewise
 def generate(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:
         mode = d.attrs.get('equiv_mode')
         if mode is None:
-            if isinstance(d, (Struct, Enum)):
-                mode = 'compare'
-            else:
-                mode = 'eq'
-
+            mode = 'compare' if isinstance(d, (Struct, Enum)) else 'eq'
         if mode == 'compare':
             yield compare_impl(d)
         elif mode == 'eq':
             yield eq_impl(d)
         elif mode == 'ignore':
             yield ignore_impl(d)
-        elif mode == 'custom':
-            pass

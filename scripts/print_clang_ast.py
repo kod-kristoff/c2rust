@@ -14,8 +14,7 @@ def dump_ast(cmd: Dict[str, Any]) -> None:
     assert len(args) >= 3 and args[1] == "-c"
     args[0] = "clang"
     args[1] = "-fsyntax-only"
-    args.append("-Xclang")
-    args.append("-ast-dump")
+    args.extend(("-Xclang", "-ast-dump"))
     cmd_str: str = " ".join(args)
 
     olddir = os.curdir
@@ -28,7 +27,7 @@ def dump_ast(cmd: Dict[str, Any]) -> None:
 
 def main() -> None:
     setup_logging()
-    if not len(sys.argv) == 3:
+    if len(sys.argv) != 3:
         print(
             "usage: print_clang_ast.py <file.c> path/to/compile_commands.json",
             file=sys.stderr)
@@ -43,7 +42,7 @@ def main() -> None:
         with open(compile_commands_path, "r") as fh:
             commands = json.load(fh)
     except FileNotFoundError:
-        die(f"file not found: " + compile_commands_path)
+        die(f"file not found: {compile_commands_path}")
 
     commands = filter(
         lambda c: os.path.basename(c["file"]) == c_file,
@@ -54,7 +53,7 @@ def main() -> None:
         die(f"no command to compile {c_file}")
     elif next(commands, None):
         logging.warning(f"warning: found multiple commands for {c_file}")
-    
+
     dump_ast(cmd)
 
 

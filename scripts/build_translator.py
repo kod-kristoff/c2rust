@@ -97,16 +97,19 @@ def configure_and_build_llvm(args: argparse.Namespace) -> None:
             cmake = get_cmd_or_die("cmake")
             max_link_jobs = est_parallel_link_jobs()
             assertions = "1" if args.assertions else "0"
-            cargs = ["-G", "Ninja", c.LLVM_SRC,
-                     "-Wno-dev",
-                     "-DCMAKE_INSTALL_PREFIX=" + c.LLVM_INSTALL,
-                     "-DCMAKE_BUILD_TYPE=" + build_type,
-                     "-DLLVM_PARALLEL_LINK_JOBS={}".format(max_link_jobs),
-                     "-DLLVM_ENABLE_ASSERTIONS=" + assertions,
-                     "-DCMAKE_EXPORT_COMPILE_COMMANDS=1",
-                     "-DLLVM_TARGETS_TO_BUILD=host",
-                     "-DLLVM_INCLUDE_BENCHMARKS=0",
-                     "-DCOMPILER_RT_ENABLE_IOS=OFF",
+            cargs = [
+                "-G",
+                "Ninja",
+                c.LLVM_SRC,
+                "-Wno-dev",
+                f"-DCMAKE_INSTALL_PREFIX={c.LLVM_INSTALL}",
+                f"-DCMAKE_BUILD_TYPE={build_type}",
+                f"-DLLVM_PARALLEL_LINK_JOBS={max_link_jobs}",
+                f"-DLLVM_ENABLE_ASSERTIONS={assertions}",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS=1",
+                "-DLLVM_TARGETS_TO_BUILD=host",
+                "-DLLVM_INCLUDE_BENCHMARKS=0",
+                "-DCOMPILER_RT_ENABLE_IOS=OFF",
             ]
 
             invoke(cmake[cargs])
@@ -208,9 +211,8 @@ def need_cargo_clean(args: argparse.Namespace) -> bool:
                 line.endswith("ninja_log") or \
                 include_pattern in line:
             continue
-        else:
-            logging.debug("need_cargo_clean:True:%s", line)
-            return True
+        logging.debug("need_cargo_clean:True:%s", line)
+        return True
     logging.debug("need_cargo_clean:False")
     return False
 
@@ -231,8 +233,7 @@ def build_transpiler(args: argparse.Namespace) -> None:
         build_flags.append("-vv")
 
     llvm_config = os.path.join(c.LLVM_BLD, "bin/llvm-config")
-    assert os.path.isfile(llvm_config), \
-        "expected llvm_config at " + llvm_config
+    assert os.path.isfile(llvm_config), f"expected llvm_config at {llvm_config}"
 
     if on_mac():
         llvm_system_libs = "-lz -lcurses -lm -lxml2"
@@ -268,7 +269,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument('--with-clang', default=False,
                         action='store_true', dest='with_clang',
                         help='build clang with this tool')
-    llvm_ver_help = 'fetch and build specified version of clang/LLVM (default: {})'.format(c.LLVM_VER)
+    llvm_ver_help = f'fetch and build specified version of clang/LLVM (default: {c.LLVM_VER})'
     # FIXME: build this list by globbing for scripts/llvm-*.0.*-key.asc
     llvm_ver_choices = ["6.0.0", "6.0.1", "7.0.0", "7.0.1", "8.0.0", "9.0.0",
         "10.0.0", "10.0.1", "11.0.0", "11.1.0", "12.0.0", "15.0.1"]

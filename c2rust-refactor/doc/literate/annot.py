@@ -199,14 +199,14 @@ def lookup_span(a: Annot[T], pos: int,
         include_start: bool=True, include_end: bool=False) -> Optional[Span[T]]:
     '''Get the span in `a` that contains `pos`, or `None` if there is no such
     span.'''
-    # `bisect` doesn't support a key function, so we just do a linear scan.
-    for s in a:
-        if s.end > pos or (include_end and s.end == pos):
-            if s.start < pos or (include_start and s.start == pos):
-                return s
-            else:
-                return None
-    return None
+    return next(
+        (
+            s if s.start < pos or (include_start and s.start == pos) else None
+            for s in a
+            if s.end > pos or (include_end and s.end == pos)
+        ),
+        None,
+    )
 
 class SpanMerger(Generic[T]):
     '''Helper for building a valid annotation from a sorted sequence of

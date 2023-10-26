@@ -77,9 +77,9 @@ if __name__ == "__main__":
     # Add option to use the debug version of `c2rust`
     config.update_args(args)
 
-    assert os.path.isfile(COMPILE_COMMANDS), "Could not find {}".format(COMPILE_COMMANDS)
+    assert os.path.isfile(COMPILE_COMMANDS), f"Could not find {COMPILE_COMMANDS}"
 
-    print(Colors.OKBLUE + "Transpiling..." + Colors.NO_COLOR)
+    print(f"{Colors.OKBLUE}Transpiling...{Colors.NO_COLOR}")
     transpile(COMPILE_COMMANDS, emit_build_files=False,
               reorganize_definitions=False, # TODO
               extra_transpiler_args=["--reduce-type-annotations"])
@@ -95,8 +95,8 @@ if __name__ == "__main__":
     # Move source files to src directory
     retcode, _, stderr = move(plumbum_rs_glob, RUST_SRC_DIR)
 
-    assert retcode != 1, "Could not move translated rs files:\n{}".format(stderr)
+    assert retcode != 1, f"Could not move translated rs files:\n{stderr}"
 
     # main.rs needs to know about modules so we add them here
     add_mods(MAIN_RS)
-    print(Colors.OKGREEN + "Done!" + Colors.NO_COLOR)
+    print(f"{Colors.OKGREEN}Done!{Colors.NO_COLOR}")

@@ -131,7 +131,7 @@ def test_json_c(args: argparse.Namespace) -> bool:
         invoke(BEAR[MAKE[JOBS]])
 
     if not os.path.isfile(cc_db_file):
-        die("missing " + cc_db_file, errno.ENOENT)
+        die(f"missing {cc_db_file}", errno.ENOENT)
 
     return transpile(cc_db_file)
 
@@ -161,7 +161,7 @@ def test_lua(args: argparse.Namespace) -> bool:
 
     cc_db_file = os.path.join(LUA_SRC, "build", c.CC_DB_JSON)
     if not os.path.isfile(cc_db_file):
-        die("missing " + cc_db_file, errno.ENOENT)
+        die(f"missing {cc_db_file}", errno.ENOENT)
 
     return transpile(cc_db_file)
 
@@ -186,7 +186,7 @@ def test_ruby(args: argparse.Namespace) -> bool:
         invoke(BEAR[MAKE[JOBS]])
 
     if not os.path.isfile(cc_db_file):
-        die("missing " + cc_db_file, errno.ENOENT)
+        die(f"missing {cc_db_file}", errno.ENOENT)
 
     return transpile(cc_db_file)
 
@@ -218,13 +218,13 @@ def main() -> None:
     bins = [c.TRANSPILER]
     for b in bins:
         if not os.path.isfile(b):
-            msg = b + " not found; run build_translator.py first?"
+            msg = f"{b} not found; run build_translator.py first?"
             die(msg, errno.ENOENT)
 
     ensure_dir(c.BUILD_DIR)
 
     args = parse_args()
-    JOBS = '-j' + str(args.jobs)
+    JOBS = f'-j{str(args.jobs)}'
 
     # filter what gets tested using `what` argument
     tests = [test_minimal,

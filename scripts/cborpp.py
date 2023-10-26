@@ -147,7 +147,7 @@ def _main() -> None:
     try:
         array = cbor2.load(args.cbor)
     except cbor2.CBORDecodeError as de:
-        die("CBOR decoding error:" + str(de))
+        die(f"CBOR decoding error:{str(de)}")
 
     # translate tags
     for e in array:

@@ -59,8 +59,6 @@ HEADER_RE = re.compile(r'# `(.*)` Command')
 
 
 def generate_commands():
-    out = ''
-
     ana = load_analysis()
 
     # Find all documented commands
@@ -87,8 +85,7 @@ def generate_commands():
 
     cmds.sort(key=lambda x: x[0])
 
-    out += '# Refactoring Commands\n\n'
-
+    out = '' + '# Refactoring Commands\n\n'
     # Table of contents
     for name, _ in cmds:
         out += ' * [`%s`](#%s)\n' % (name, name)
