@@ -36,12 +36,12 @@ def format_files(all_files: List[File]):
 def init_fmt_map(f: File):
     '''Initialize a `File`'s `fmt_map` field, which describes the mapping from
     unformatted text positions to formatted ones.'''
-    matching_spans = []
     sm = difflib.SequenceMatcher(a=f.unformatted, b=f.text)
-    for tag, i1, i2, j1, j2 in sm.get_opcodes():
-        if tag == 'equal':
-            matching_spans.append((Span(i1, i2), j1))
-
+    matching_spans = [
+        (Span(i1, i2), j1)
+        for tag, i1, i2, j1, j2 in sm.get_opcodes()
+        if tag == 'equal'
+    ]
     fmt_map_index = [s.start for s, pos in matching_spans]
 
     f.set_fmt_map(matching_spans, fmt_map_index)

@@ -222,9 +222,9 @@ if __name__ == "__main__":
     # Add option to use the debug version of `c2rust`
     config.update_args(args)
 
-    assert os.path.isfile(COMPILE_COMMANDS), "Could not find {}".format(COMPILE_COMMANDS)
+    assert os.path.isfile(COMPILE_COMMANDS), f"Could not find {COMPILE_COMMANDS}"
 
-    print(Colors.OKBLUE + "Transpiling..." + Colors.NO_COLOR)
+    print(f"{Colors.OKBLUE}Transpiling...{Colors.NO_COLOR}")
     transpile(COMPILE_COMMANDS, emit_build_files=False,
               reorganize_definitions=True,
               extra_transpiler_args=["--reduce-type-annotations"])
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     # Move compat files to src/compat directory
     retcode, _, stderr = move(plumbum_compat_rs_glob, RUST_COMPAT_DIR)
 
-    assert retcode != 1, "Could not move translated rs files:\n{}".format(stderr)
+    assert retcode != 1, f"Could not move translated rs files:\n{stderr}"
 
     # Some tmux files have the same file names as structs, so we also have to append
     # an underscore to the filename so that rust doesn't get confused
@@ -251,4 +251,4 @@ if __name__ == "__main__":
 
     # main.rs needs to know about modules so we add them here
     add_mods(MAIN_RS)
-    print(Colors.OKGREEN + "Done!" + Colors.NO_COLOR)
+    print(f"{Colors.OKGREEN}Done!{Colors.NO_COLOR}")

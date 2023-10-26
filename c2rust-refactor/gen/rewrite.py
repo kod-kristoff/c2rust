@@ -158,32 +158,28 @@ def prec_name_to_expr(name, inc):
     if name.isupper():
         # If all letters are uppercase, it's a precedence constant from
         # syntax::util::parser
-        return 'parser::PREC_%s%s' % (name, inc_str)
+        return f'parser::PREC_{name}{inc_str}'
     else:
         # If some letters are lowercase, it's an AssocOp variant name.
-        return 'parser::AssocOp::%s.precedence() as i8%s' % (name, inc_str)
+        return f'parser::AssocOp::{name}.precedence() as i8{inc_str}'
 
 def field_prec_expr(f, first, suffix='1'):
     # First, figure out the "normal" precedence expression.
     prec_val = 'parser::PREC_RESET'
 
-    prec = f.attrs.get('prec')
-    if prec:
+    if prec := f.attrs.get('prec'):
         prec_val = prec_name_to_expr(prec, False)
 
-    prec_inc = f.attrs.get('prec_inc')
-    if prec_inc:
+    if prec_inc := f.attrs.get('prec_inc'):
         prec_val = prec_name_to_expr(prec_inc, True)
 
-    left_of = f.attrs.get('prec_left_of_binop')
-    if left_of:
+    if left_of := f.attrs.get('prec_left_of_binop'):
         # Refer to `op1` instead of `op`, to get the binop as it appear in the
         # new AST.
-        return 'binop_left_prec(%s)' % (left_of + suffix)
+        return f'binop_left_prec({left_of + suffix})'
 
-    right_of = f.attrs.get('prec_right_of_binop')
-    if right_of:
-        return 'binop_right_prec(%s)' % (right_of + suffix)
+    if right_of := f.attrs.get('prec_right_of_binop'):
+        return f'binop_right_prec({right_of + suffix})'
 
     prec_first = f.attrs.get('prec_first')
     if first and prec_first:
@@ -191,7 +187,7 @@ def field_prec_expr(f, first, suffix='1'):
 
     # Now apply `prec_special`, if present
     ctor = f.attrs.get('prec_special', 'Normal')
-    return 'ExprPrec::%s(%s)' % (ctor, prec_val)
+    return f'ExprPrec::{ctor}({prec_val})'
 
 SELF_FIELD_RE = re.compile(r'\bself.([a-zA-Z0-9_]+)\b')
 def rewrite_field_expr(expr, fmt):
@@ -199,7 +195,8 @@ def rewrite_field_expr(expr, fmt):
         # If `self.foo` has type `T`, then the local variable `foo1` has type
         # `&T`.  We add a deref to correct for this.
         var_name = fmt % m.group(1)
-        return '(*%s)' % var_name
+        return f'(*{var_name})'
+
     return SELF_FIELD_RE.sub(repl, expr)
 
 DEFAULT_GEN_TRAITS = {'Rewrite', 'MaybeRewriteSeq', 'RecoverChildren'}
@@ -230,10 +227,10 @@ def type_has_impl(d, trait):
     if trait in DEFAULT_GEN_TRAITS:
         return True
 
-    if isinstance(d, (Struct, Enum)) and trait in DEFAULT_STRUCT_ENUM_GEN_TRAITS:
-        return True
-
-    return False
+    return (
+        isinstance(d, (Struct, Enum))
+        and trait in DEFAULT_STRUCT_ENUM_GEN_TRAITS
+    )
 
 def type_needs_generated_impl(d, trait):
     skip = d.attrs.get('rewrite_skip')
@@ -250,10 +247,10 @@ def type_needs_generated_impl(d, trait):
     if trait in DEFAULT_GEN_TRAITS:
         return True
 
-    if isinstance(d, (Struct, Enum)) and trait in DEFAULT_STRUCT_ENUM_GEN_TRAITS:
-        return True
-
-    return False
+    return (
+        isinstance(d, (Struct, Enum))
+        and trait in DEFAULT_STRUCT_ENUM_GEN_TRAITS
+    )
 
 def get_rewrite_strategies(d):
     strats_str = d.attrs.get('rewrite_strategies')
@@ -264,9 +261,8 @@ def get_rewrite_strategies(d):
 
     if isinstance(d, Flag):
         strats.append('equal')
-    else:
-        if type_has_impl(d, 'Recursive'):
-            strats.append('recursive')
+    elif type_has_impl(d, 'Recursive'):
+        strats.append('recursive')
 
     extra_strats = d.attrs.get('rewrite_extra_strategies')
     if extra_strats is not None:
@@ -285,9 +281,9 @@ def do_record_node_span(d, span_node, id_node, rcx):
         return
 
     yield '{'
-    yield '  let span = %s.get_span();' % span_node
-    yield '  let id = %s.get_node_id();' % id_node
-    yield '  %s.record_node_span(span, id);' % rcx
+    yield f'  let span = {span_node}.get_span();'
+    yield f'  let id = {id_node}.get_node_id();'
+    yield f'  {rcx}.record_node_span(span, id);'
     yield '}'
 
 
@@ -312,7 +308,7 @@ def do_rewrite_impl(d):
         yield '    let mark = rcx.mark();'
         if has_field(d, 'id'):
             yield '    trace!("{:?}: rewrite: try %s", new.id);' % strat
-        yield '    let ok = strategy::%s::rewrite(old, new, rcx.borrow());' % strat
+        yield f'    let ok = strategy::{strat}::rewrite(old, new, rcx.borrow());'
         yield '    if ok {'
         if has_field(d, 'id'):
             yield '      trace!("{:?}: rewrite: %s succeeded", new.id);' % strat
@@ -332,7 +328,7 @@ def do_rewrite_impl(d):
 @linewise
 def generate_rewrite_impls(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:
@@ -346,7 +342,7 @@ def do_recursive_body(se, target1, target2):
 
     yield 'match (%s, %s) {' % (target1, target2)
     for v, path in variants_paths(se):
-        yield '  (&%s,' % struct_pattern(v, path, '1')
+        yield f"  (&{struct_pattern(v, path, '1')},"
         yield '   &%s) => {' % struct_pattern(v, path, '2')
 
         for f in v.fields:
@@ -380,25 +376,21 @@ def do_recursive_body(se, target1, target2):
             yield '    ({'
 
             if 'prec_first' in f.attrs:
-                yield '      let old = rcx.replace_expr_prec(%s);' % \
-                        field_prec_expr(f, True)
+                yield f'      let old = rcx.replace_expr_prec({field_prec_expr(f, True)});'
                 yield '      let ok = Rewrite::rewrite(&%s1[0], &%s2[0], ' \
                         'rcx.borrow());' % (f.name, f.name)
-                yield '      rcx.replace_expr_prec(%s);' % field_prec_expr(f, False)
-                rewrite_expr = mk_rewrite('&%s1[1..]' % f.name, '&%s2[1..]' % f.name)
-                yield '      let ok = ok && %s;' % rewrite_expr
+                yield f'      rcx.replace_expr_prec({field_prec_expr(f, False)});'
+                rewrite_expr = mk_rewrite(f'&{f.name}1[1..]', f'&{f.name}2[1..]')
+                yield f'      let ok = ok && {rewrite_expr};'
                 yield '      rcx.replace_expr_prec(old);'
-                yield '      ok'
             else:
                 if contains_expr:
-                    yield '      let old = rcx.replace_expr_prec(%s);' % \
-                            field_prec_expr(f, False)
-                rewrite_expr = mk_rewrite('%s1' % f.name, '%s2' % f.name)
-                yield '      let ok = %s;' % rewrite_expr
+                    yield f'      let old = rcx.replace_expr_prec({field_prec_expr(f, False)});'
+                rewrite_expr = mk_rewrite(f'{f.name}1', f'{f.name}2')
+                yield f'      let ok = {rewrite_expr};'
                 if contains_expr:
                     yield '      rcx.replace_expr_prec(old);'
-                yield '      ok'
-
+            yield '      ok'
             yield '    }) &&'
 
         yield '    true'
@@ -433,7 +425,7 @@ def do_recursive_impl(d):
 @linewise
 def generate_recursive_impls(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:
@@ -450,7 +442,7 @@ def do_recover_children_match(d):
 
     yield 'match (reparsed, new) {'
     for v, path in variants_paths(d):
-        yield '  (&%s,' % struct_pattern(v, path, '_r')
+        yield f"  (&{struct_pattern(v, path, '_r')},"
         yield '   &%s) => {' % struct_pattern(v, path, '_n')
         for f in v.fields:
             if 'rewrite_ignore' in f.attrs:
@@ -511,7 +503,7 @@ def do_recover_children_impl(d):
 @linewise
 def generate_recover_children_impls(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:
@@ -531,7 +523,7 @@ def do_seq_item_impl(d):
 @linewise
 def generate_seq_item_impls(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:
@@ -543,7 +535,7 @@ def generate_seq_item_impls(decls):
 def do_maybe_rewrite_seq_impl(d):
     supported = type_has_impl(d, 'SeqItem')
 
-    for ty in (d.name, 'P<%s>' % d.name):
+    for ty in (d.name, f'P<{d.name}>'):
         yield '#[allow(unused)]'
         yield 'impl MaybeRewriteSeq for %s {' % ty
         if supported:
@@ -551,7 +543,7 @@ def do_maybe_rewrite_seq_impl(d):
             yield '                       new: &[Self],'
             yield '                       outer_span: Span,'
             yield '                       rcx: RewriteCtxtRef) -> bool {'
-            yield '    trace!("try sequence rewriting for %s");' % d.name
+            yield f'    trace!("try sequence rewriting for {d.name}");'
             yield '    rewrite_seq(old, new, outer_span, rcx)'
             yield '  }'
         yield '}'
@@ -559,7 +551,7 @@ def do_maybe_rewrite_seq_impl(d):
 @linewise
 def generate_maybe_rewrite_seq_impls(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:

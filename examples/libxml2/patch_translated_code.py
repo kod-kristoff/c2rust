@@ -118,14 +118,14 @@ def replace_all(file_path: str, replacements: Iterable[Tuple[str, str]]) -> None
     perl_args = ["-000", "-pi"]
 
     for replace_from, replace_to in replacements:
-        perl_args.append("-e")
-        perl_args.append("s/{}/{}/g;".format(replace_from, replace_to))
-
+        perl_args.extend(("-e", f"s/{replace_from}/{replace_to}/g;"))
     perl_args.append(file_path)
 
     retcode, stdout, stderr = perl[perl_args].run()
 
-    assert retcode != 1, "Failed to apply patch {}/replace_all:\n{}".format(file_name, stderr)
+    assert (
+        retcode != 1
+    ), f"Failed to apply patch {file_name}/replace_all:\n{stderr}"
 
 if __name__ == "__main__":
     for file_name, patch_config in PATCHES.items():

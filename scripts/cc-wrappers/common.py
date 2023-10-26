@@ -23,11 +23,11 @@ def run(build_type):
     # compilation gets an output file
     hm = hashlib.sha256()
     hm.update(build_json.encode("utf-8"))
-    build_file_name = "%s.json" % hm.hexdigest()
+    build_file_name = f"{hm.hexdigest()}.json"
     build_file = os.path.join(build_commands_dir, build_file_name)
     with open(build_file, 'w') as f:
         f.write(build_json)
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    b_arg = ["-B" + script_dir] if build_type == "cc" else []
+    b_arg = [f"-B{script_dir}"] if build_type == "cc" else []
     return subprocess.call([command] + b_arg + sys.argv[1:])

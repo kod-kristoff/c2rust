@@ -160,7 +160,7 @@ class RefactorState:
 
         if not self.exec_only:
             rp = ResultProcessor(self.all_files, work_dir.name)
-            for i, info in enumerate(self.pending_results):
+            for info in self.pending_results:
                 result = rp.next_result(info.is_commit)
                 for k in info.dests:
                     self.results[k] = result
@@ -287,7 +287,7 @@ class RefactorState:
                 continue
             attrs.append(l)
         new_opts = self.parse_block_options(attrs)
-        print('parsed attrs %s as %s' % (attrs, new_opts))
+        print(f'parsed attrs {attrs} as {new_opts}')
         del new_opts['_lang']
         del new_opts['_attrs']
         self.global_opts = new_opts
@@ -371,7 +371,7 @@ def refactor_crate(crate: AnyCrate, cmds: List[RefactorCommand],
         pre_args, post_args = [], ['--', os.path.join(work_dir.name, 'tmp.rs'),
                 '--crate-type', 'rlib']
     else:
-        raise TypeError('bad crate type %s' % type(crate))
+        raise TypeError(f'bad crate type {type(crate)}')
 
     all_args = ['-r', rewrite_mode]
     all_args.extend(pre_args)
@@ -570,7 +570,7 @@ def apply_rewrites(span: JsonDict, rws: List[JsonDict], nodes: List[JsonDict]):
             # Don't warn about nodes with dummy spans not getting updated
             # endpoints.  Those nodes don't actually appear in the source code.
             if n['span']['file'] != '<<dummy>>':
-                print('warning: bad mapped range %s, %s for %s' % (new_lo, new_hi, n))
+                print(f'warning: bad mapped range {new_lo}, {new_hi} for {n}')
             continue
         new_nodes.append((new_lo, new_hi, n['id']))
 

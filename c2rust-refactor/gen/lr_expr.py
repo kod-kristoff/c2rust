@@ -26,20 +26,20 @@ def expr_kind_match(d, mode):
         yield '  %s => {' % struct_pattern(v, path, bind_mode='')
         for f in v.fields:
             if 'lvalue_mut' in f.attrs:
-                yield '    %s.fold_lvalue_mut(lr);' % f.name
+                yield f'    {f.name}.fold_lvalue_mut(lr);'
             elif 'lvalue_imm' in f.attrs:
-                yield '    %s.fold_lvalue(lr);' % f.name
+                yield f'    {f.name}.fold_lvalue(lr);'
             elif 'lr_propagate' in f.attrs:
-                yield '    %s.fold_%s(lr);' % (f.name, mode)
+                yield f'    {f.name}.fold_{mode}(lr);'
             elif 'lvalue_kind' in f.attrs:
                 yield '    match %s {' % f.attrs['lvalue_kind']
                 yield '      Mutability::Mutable =>'
-                yield '        %s.fold_lvalue_mut(lr),' % f.name
+                yield f'        {f.name}.fold_lvalue_mut(lr),'
                 yield '      Mutability::Immutable =>'
-                yield '        %s.fold_lvalue(lr),' % f.name
+                yield f'        {f.name}.fold_lvalue(lr),'
                 yield '    }'
             else:
-                yield '    %s.fold_rvalue(lr);' % f.name
+                yield f'    {f.name}.fold_rvalue(lr);'
         yield '  }'
     yield '}'
 
@@ -91,7 +91,7 @@ def null_impl(d):
 @linewise
 def generate(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:

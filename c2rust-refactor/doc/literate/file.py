@@ -267,11 +267,7 @@ class File:
             self._init_fmt_map()
 
         i = bisect.bisect_right(self.fmt_map_index, unformatted_pos)
-        if i == 0:
-            # Dummy result
-            return (Span(0, 0), 0)
-        else:
-            return self.fmt_map[i - 1]
+        return (Span(0, 0), 0) if i == 0 else self.fmt_map[i - 1]
 
     def fmt_map_translate(self, unformatted_pos: int) -> int:
         '''Translate an unformatted text position to a corresponding position
@@ -283,8 +279,7 @@ class File:
         # nodes, which is the main use case for this function.
         span, new_start = self.fmt_map_lookup(unformatted_pos)
         delta = unformatted_pos - span.start
-        if delta > len(span):
-            delta = len(span)
+        delta = min(delta, len(span))
         return new_start + delta
 
 

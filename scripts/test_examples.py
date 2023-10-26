@@ -45,7 +45,7 @@ EXAMPLES = [
 
 
 def build_path(path: str, new: str, is_dir: bool) -> str:
-    err_msg = "`{}` does not exist in {}".format(new, path)
+    err_msg = f"`{new}` does not exist in {path}"
 
     new_path = os.path.join(path, new)
     if is_dir:
@@ -74,13 +74,13 @@ class Test:
 
     def init_submodule(self) -> None:
         if self.args.regex_examples.fullmatch(self.project_name):
-            print_blue("Initializing {}...".format(self.project_name))
+            print_blue(f"Initializing {self.project_name}...")
             with pb.local.cwd(self.example_dir):
                 invoke(git, ['submodule', 'update', '--init', 'repo'])
 
     def deinit_submodule(self) -> None:
         if self.args.regex_examples.fullmatch(self.project_name) and self.args.deinit:
-            print_blue("Deinitializing {}...".format(self.project_name))
+            print_blue(f"Deinitializing {self.project_name}...")
             with pb.local.cwd(self.example_dir):
                 invoke(git, ['submodule', 'deinit', 'repo', '-f'])
 
@@ -111,7 +111,7 @@ class Test:
     # will be built or rustc will be called directly
     def build(self) -> None:
         with pb.local.cwd(self.rust_src):
-            invoke(cargo, ['build', '-j{}'.format(NUM_JOBS)])
+            invoke(cargo, ['build', f'-j{NUM_JOBS}'])
 
     def test(self) -> None:
         pass
@@ -143,7 +143,7 @@ class Genann(Test):
         rm = get_cmd_or_die('rm')
         ln = get_cmd_or_die('ln')
         for N in (1, 4):
-            test = 'example{}'.format(N)
+            test = f'example{N}'
             with pb.local.cwd(self.repo_dir):
                 invoke(rm, ['-rf', self.rust_src])
 
@@ -188,7 +188,7 @@ class Libxml2(Test):
         self.args = args
         self.project_name = 'libxml2'
         self.transpiler_args = []
-        self.ib_cmd = ['make', 'check', '-j{}'.format(NUM_JOBS)]
+        self.ib_cmd = ['make', 'check', f'-j{NUM_JOBS}']
         self.example_dir = build_path(
             c.EXAMPLES_DIR, self.project_name, is_dir=True)
         self.repo_dir = build_path(self.example_dir, 'repo', is_dir=True)
@@ -297,7 +297,7 @@ class TinyCC(Test):
         self.args = args
         self.project_name = 'tinycc'
         self.transpiler_args = []
-        self.ib_cmd = ['make', '-j{}'.format(NUM_JOBS)]
+        self.ib_cmd = ['make', f'-j{NUM_JOBS}']
         self.example_dir = build_path(
             c.EXAMPLES_DIR, self.project_name, is_dir=True)
         self.repo_dir = build_path(self.example_dir, 'repo', is_dir=True)
@@ -331,7 +331,7 @@ class Tmux(Test):
         self.args = args
         self.project_name = 'tmux'
         self.transpiler_args = []
-        self.ib_cmd = ['make', 'check', '-j{}'.format(NUM_JOBS)]
+        self.ib_cmd = ['make', 'check', f'-j{NUM_JOBS}']
         self.example_dir = build_path(
             c.EXAMPLES_DIR, self.project_name, is_dir=True)
         self.repo_dir = build_path(self.example_dir, 'repo', is_dir=True)
@@ -450,8 +450,9 @@ def run(args: argparse.Namespace) -> None:
         not _is_excluded(example.project_name):
             example.build_and_test()
 
-    print(Colors.OKGREEN + "Done building and testing the examples." +
-          Colors.NO_COLOR)
+    print(
+        f"{Colors.OKGREEN}Done building and testing the examples.{Colors.NO_COLOR}"
+    )
 
 
 def main() -> None:

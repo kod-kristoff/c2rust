@@ -28,12 +28,11 @@ from util import *
 def do_match(se, target1, target2):
     yield 'match (%s, %s) {' % (target1, target2)
     for v, path in variants_paths(se):
-        yield '  (&%s,' % struct_pattern(v, path, '1')
+        yield f"  (&{struct_pattern(v, path, '1')},"
         yield '   &%s) => {' % struct_pattern(v, path, '2')
         for f in v.fields:
             if f.attrs.get('match') != 'ignore':
-                yield '    mcx.try_match(%s1, %s2)?;' % \
-                        (f.name, f.name)
+                yield f'    mcx.try_match({f.name}1, {f.name}2)?;'
         yield '    Ok(())'
         yield '  }'
     yield '  (_, _) => Err(matcher::Error::VariantMismatch),'
@@ -81,17 +80,13 @@ def custom_impl(se):
 @linewise
 def generate(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:
         mode = d.attrs.get('match')
         if mode is None:
-            if isinstance(d, (Struct, Enum)):
-                mode = 'compare'
-            else:
-                mode = 'ignore'
-
+            mode = 'compare' if isinstance(d, (Struct, Enum)) else 'ignore'
         if mode == 'compare':
             yield compare_impl(d)
         elif mode == 'eq':

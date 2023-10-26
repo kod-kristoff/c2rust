@@ -31,7 +31,7 @@ def validate_csmith_home() -> None:
     """Check that csmith.h can be found in CSMITH_HOME."""
     csmith_header = os.path.join(CSMITH_HOME, 'csmith.h')
     if not os.access(csmith_header, os.R_OK):
-        print('Unable to access csmith header: %s' % csmith_header)
+        print(f'Unable to access csmith header: {csmith_header}')
         print('Please set the CSMITH_HOME environment variable to the '
               'directory containing this header.')
         exit(1)

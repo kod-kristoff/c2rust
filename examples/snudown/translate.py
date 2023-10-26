@@ -20,7 +20,7 @@ class CompileCommandsBuilder(object):
         self.entries.append(entry._asdict())
 
     def write_result(self, outdir: str) -> None:
-        assert os.path.isdir(outdir), "No such dir: " + outdir
+        assert os.path.isdir(outdir), f"No such dir: {outdir}"
         outpath = os.path.join(outdir, config.CC_DB_JSON)
         outjson = json.dumps(self.entries, indent=2)
         # print(outjson)
@@ -55,9 +55,9 @@ def main(xcheck: bool, snudown: str):
 
     for s in slugs:
         args = ctmpl.format(slug=s, snudown=snudown)
-        arguments = [c for c in args.split()]
-        file = os.path.join(snudown, "src", s + ".c")
-        assert os.path.isfile(file), "No such file: " + file
+        arguments = list(args.split())
+        file = os.path.join(snudown, "src", f"{s}.c")
+        assert os.path.isfile(file), f"No such file: {file}"
         bldr.add_entry(snudown, arguments, file)
 
     cmds_json_path = bldr.write_result(os.path.curdir)
@@ -93,6 +93,6 @@ if __name__ == "__main__":
     if sys.argv[1] == "html_entities":
         generate_html_entries_header(SNUDOWN)
     else:
-        XCHECK = True if sys.argv[1] == "rustcheck" else False
+        XCHECK = sys.argv[1] == "rustcheck"
         main(XCHECK, SNUDOWN)
 

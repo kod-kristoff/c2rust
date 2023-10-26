@@ -48,7 +48,7 @@ CRATES = [
 
 
 def confirm(prompt: str) -> bool:
-    response = input(prompt + ' [y/N] ')
+    response = input(f'{prompt} [y/N] ')
     try:
         return bool(strtobool(response))
     except ValueError:
@@ -57,11 +57,11 @@ def confirm(prompt: str) -> bool:
 
 
 def print_error(msg: str) -> None:
-    print(Colors.FAIL + 'ERROR: ' + Colors.NO_COLOR + msg)
+    print(f'{Colors.FAIL}ERROR: {Colors.NO_COLOR}{msg}')
 
 
 def print_warning(msg: str) -> None:
-    print(Colors.WARNING + 'WARNING: ' + Colors.NO_COLOR + msg)
+    print(f'{Colors.WARNING}WARNING: {Colors.NO_COLOR}{msg}')
 
 
 class Driver:
@@ -79,9 +79,7 @@ class Driver:
         # Make sure any changed crates have updated versions
         ok = self._in_crates(self._check_version)
 
-        # Check that the repository is clean
-        git_status = git('status', '--porcelain').strip()
-        if git_status:
+        if git_status := git('status', '--porcelain').strip():
             print_error('Repository is not in a clean state. Commit any changes and resolve any untracked files.')
             ok = False
 
@@ -117,16 +115,12 @@ class Driver:
             if not confirm('Could not complete git tag successfully, do you want to continue?'):
                 exit(1)
 
-        if not self.dry_run:
-            if not confirm('Are you sure you want to publish version {} to crates.io?'.format(self.version)):
+        if not confirm(
+            f'Are you sure you want to publish version {self.version} to crates.io?'
+        ):
+            if not self.dry_run:
                 print_error('Publishing not confirmed, exiting.')
                 exit(1)
-
-            # Since we are not doing a dry run, make sure all relevant crates
-            # package cleanly before we push any.
-            # Unfortunately it seems we can't package without pushing
-            # dependencies first, unless we set up a custom cargo repo.
-            # self.package()
 
         self._in_crates(self._publish)
 
@@ -152,7 +146,7 @@ class Driver:
             cargo_toml = toml.load(cargo_toml_path)
             if len(self.crates) == 0 or cargo_toml['package']['name'] in self.crates:
                 with pb.local.cwd(crate_dir):
-                    print('Entering {}'.format(crate_dir))
+                    print(f'Entering {crate_dir}')
                     if not callback(cargo_toml['package']['name'], cargo_toml):
                         ok = False
         return ok
@@ -165,7 +159,9 @@ class Driver:
         except pb.commands.processes.ProcessExecutionError:
             changed = True
         if changed and old_version != self.version:
-            print_error('{} has changed since version {}, you must bump its version number to {}'.format(crate_name, old_version, self.version))
+            print_error(
+                f'{crate_name} has changed since version {old_version}, you must bump its version number to {self.version}'
+            )
             print()
             return False
         return True
@@ -182,7 +178,9 @@ class Driver:
             return False
         remote = matches.group(1)
 
-        if not self.dry_run and not confirm('Warning: git tag {} will be created and pushed to github. Do you want to proceed?'.format(self.version)):
+        if not self.dry_run and not confirm(
+            f'Warning: git tag {self.version} will be created and pushed to github. Do you want to proceed?'
+        ):
             print_error('git tag and merge not confirmed, exiting.')
             exit(1)
 
@@ -194,10 +192,7 @@ class Driver:
             git['push', remote, self.version],
         ]
 
-        for cmd in cmds:
-            if not self._invoke(cmd):
-                return False
-        return True
+        return all(self._invoke(cmd) for cmd in cmds)
 
     def _publish(self, crate_name: str, cargo_toml: Dict[str, Any]) -> bool:
         args = ['publish']

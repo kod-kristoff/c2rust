@@ -30,11 +30,11 @@ def do_nt_match_body(se, target1, target2):
 
     yield 'match (%s, %s) {' % (target1, target2)
     for v, path in variants_paths(se):
-        yield '  (&%s,' % struct_pattern(v, path, '1')
+        yield f"  (&{struct_pattern(v, path, '1')},"
         yield '   &%s) => {' % struct_pattern(v, path, '2')
 
         for f in v.fields:
-            yield '    NtMatch::nt_match(%s1, %s2, cx);' % (f.name, f.name)
+            yield f'    NtMatch::nt_match({f.name}1, {f.name}2, cx);'
 
         yield '  },'
 
@@ -53,7 +53,7 @@ def do_nt_match_impl(d):
 @linewise
 def generate(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:

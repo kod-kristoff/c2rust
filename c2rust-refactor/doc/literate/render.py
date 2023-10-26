@@ -44,20 +44,20 @@ def mark_desc(f: File, node_id: int) -> str:
         id_str = '#%d' % m.id
 
     if m.name is not None and m.name != '':
-        mark_str = '%s %s "%s"' % (m.kind, id_str, m.name)
+        mark_str = f'{m.kind} {id_str} "{m.name}"'
     else:
-        mark_str = '%s %s' % (m.kind, id_str)
+        mark_str = f'{m.kind} {id_str}'
 
     added, removed, kept = f.mark_labels.get(node_id, ((), (), ()))
     parts = []
     if len(added) > 0:
-        parts.append('added %s' % ', '.join(repr(l) for l in added))
+        parts.append(f"added {', '.join(repr(l) for l in added)}")
     if len(removed) > 0:
-        parts.append('removed %s' % ', '.join(repr(l) for l in removed))
+        parts.append(f"removed {', '.join(repr(l) for l in removed)}")
     if len(kept) > 0:
-        parts.append('kept %s' % ', '.join(repr(l) for l in kept))
+        parts.append(f"kept {', '.join(repr(l) for l in kept)}")
 
-    return '%s: %s' % (mark_str, '; '.join(parts))
+    return f"{mark_str}: {'; '.join(parts)}"
 
 def render_line(line: Line, f: File, opts: Dict[str, Any]) -> str:
     '''Render HTML output for a single line of a file.  `f` should be the file
@@ -67,12 +67,10 @@ def render_line(line: Line, f: File, opts: Dict[str, Any]) -> str:
     # Helpers for adding common types of parts, such as span start/end tags.
 
     def mark_arrow(m, start):
-        if start:
-            sym = '&#x25b6;'
-        else:
-            sym = '&#x25c0;'
-        parts.append('<span class="mark-%s" title="%s">%s</span>' %
-                (mark_class(f, m), html.escape(mark_desc(f, m)), sym))
+        sym = '&#x25b6;' if start else '&#x25c0;'
+        parts.append(
+            f'<span class="mark-{mark_class(f, m)}" title="{html.escape(mark_desc(f, m))}">{sym}</span>'
+        )
 
     def emit_text(start, end):
         if end == len(line.text) and line.text.endswith('\n'):
@@ -85,7 +83,7 @@ def render_line(line: Line, f: File, opts: Dict[str, Any]) -> str:
             parts.append(line.text[start : end])
 
     def start_span(cls):
-        parts.append('<span class="%s">' % cls)
+        parts.append(f'<span class="{cls}">')
 
     def end_span():
         parts.append('</span>')
@@ -171,7 +169,7 @@ def render_line(line: Line, f: File, opts: Dict[str, Any]) -> str:
             for m in sorted(label):
                 mark_arrow(m, False)
         elif kind == 'i_s':
-            start_span('diff-intra-%s' % label)
+            start_span(f'diff-intra-{label}')
         elif kind == 'i_e':
             end_span()
         elif kind == 'hl_s':
@@ -217,7 +215,7 @@ def prepare_files(files: [File]):
 def make_diff(f1: File, f2: File, opts: Dict[str, Any]) -> Diff:
     '''Construct a diff between two files, and run diff initialization
     steps.'''
-    print('  diffing file %s' % f1.path)
+    print(f'  diffing file {f1.path}')
 
     f1 = f1.copy()
     f2 = f2.copy()
@@ -256,14 +254,14 @@ def render_diff(old_files: Dict[str, File], new_files: Dict[str, File],
     # Is the diff empty?
     empty = True
 
-    parts = []
-    parts.append('<table class="diff %s">\n' %
-            literate.highlight.get_highlight_class(opts))
-    parts.append('<colgroup>')
+    parts = [
+        '<table class="diff %s">\n'
+        % literate.highlight.get_highlight_class(opts),
+        '<colgroup>',
+    ]
     if not omit_old:
         parts.append('<col width="50"><col>')
-    parts.append('<col width="50"><col>')
-    parts.append('</colgroup>\n')
+    parts.extend(('<col width="50"><col>', '</colgroup>\n'))
     for file_idx, f in enumerate(file_names):
         # `make_diff` copies the files, then updates the copies.  We want
         # references to the new copies only.
@@ -276,9 +274,8 @@ def render_diff(old_files: Dict[str, File], new_files: Dict[str, File],
 
         if opts['show-filename']:
             parts.append('<tr><td colspan="%d" class="filename">%s</td></tr>' % (cols, f))
-        else:
-            if file_idx > 0:
-                parts.append('<tr><td colspan="%d"><hr></td></tr>' % cols)
+        elif file_idx > 0:
+            parts.append('<tr><td colspan="%d"><hr></td></tr>' % cols)
 
         first = True
         for hunk in diff.hunks:
@@ -287,27 +284,33 @@ def render_diff(old_files: Dict[str, File], new_files: Dict[str, File],
             first = False
 
             for ol in hunk.output_lines:
-                old_cls = 'diff-old' if ol.changed else ''
-                new_cls = 'diff-new' if ol.changed and not omit_old else ''
-
                 parts.append('<tr>')
 
                 if not omit_old:
-                    if ol.old_line is not None:
-                        parts.append('<td class="line-num %s">%d</td>' %
-                                (old_cls, ol.old_line + 1))
-                        parts.append('<td class="%s"><pre>' % old_cls)
-                        parts.append(render_line(old.lines[ol.old_line], old, opts))
-                        parts.append('</pre></td>')
-                    else:
+                    if ol.old_line is None:
                         parts.append('<td></td><td></td>')
 
+                    else:
+                        old_cls = 'diff-old' if ol.changed else ''
+                        parts.extend(
+                            (
+                                '<td class="line-num %s">%d</td>'
+                                % (old_cls, ol.old_line + 1),
+                                f'<td class="{old_cls}"><pre>',
+                            )
+                        )
+                        parts.extend((render_line(old.lines[ol.old_line], old, opts), '</pre></td>'))
                 if ol.new_line is not None:
-                    parts.append('<td class="line-num %s">%d</td>' %
-                            (new_cls, ol.new_line + 1))
-                    parts.append('<td class="%s"><pre>' % new_cls)
-                    parts.append(render_line(new.lines[ol.new_line], new, opts))
-                    parts.append('</pre></td>')
+                    new_cls = 'diff-new' if ol.changed and not omit_old else ''
+
+                    parts.extend(
+                        (
+                            '<td class="line-num %s">%d</td>'
+                            % (new_cls, ol.new_line + 1),
+                            f'<td class="{new_cls}"><pre>',
+                        )
+                    )
+                    parts.extend((render_line(new.lines[ol.new_line], new, opts), '</pre></td>'))
                 else:
                     parts.append('<td></td><td></td>')
 
@@ -315,46 +318,30 @@ def render_diff(old_files: Dict[str, File], new_files: Dict[str, File],
 
     parts.append('</table>\n')
 
-    if empty:
-        return None
-
-    return ''.join(parts)
+    return None if empty else ''.join(parts)
 
 
 def get_styles() -> str:
     '''Return CSS styles for displaying generated diffs.'''
-    parts = []
-    parts.append('table.highlight { width: 800px; table-layout: fixed; }')
-    parts.append('.highlight td { overflow-wrap: break-word; }')
-    parts.append('.highlight td.line-num { text-align: right; }')
-    parts.append('.highlight pre { display: inline; white-space: pre-wrap; }')
-
-    # Diff highlight colors for use with `monokai` color scheme
-    parts.append('.diff-old { background-color: rgba(255, 0, 0, 0.25); }')
-    parts.append('.diff-new { background-color: rgba(0, 255, 0, 0.20); }')
-    parts.append('.diff-intra-del { border: solid 1px #cc0000; }')
-    parts.append('.diff-intra-chg { border: solid 1px #cccc00; }')
-    parts.append('.diff-intra-ins { border: solid 1px #00cc00; }')
-
-    # Monokai colors for mark indicators (taken from pygments.styles.monokai)
-    parts.append('.mark-kept { color: #66d9ef; border: solid 1px; }')
-    parts.append('.mark-ins { color: #a6e22e; border: solid 1px; }')
-    parts.append('.mark-del { color: #f92672; border: solid 1px; }')
-    parts.append('.mark-chg { color: #e6db74; border: solid 1px; }')
-
-    # Colors for light-background color schemes, like `friendly`
-    #parts.append('.diff-old { background-color: #ffcccc; }')
-    #parts.append('.diff-new { background-color: #ccffcc; }')
-    #parts.append('.diff-intra-del { border: solid 1px #880000; }')
-    #parts.append('.diff-intra-chg { border: solid 1px #888800; }')
-    #parts.append('.diff-intra-ins { border: solid 1px #008800; }')
-
-    # Compatibility with manual/mdbook rendering
-    parts.append('.diff { font-size: 0.875em; }')
-    parts.append('.diff td { padding: 2px; }')
-    parts.append('.diff td pre { margin: 0; }')
-    parts.append('table.diff tbody tr:nth-child(2n) { background: inherit; }')
-
+    parts = [
+        'table.highlight { width: 800px; table-layout: fixed; }',
+        '.highlight td { overflow-wrap: break-word; }',
+        '.highlight td.line-num { text-align: right; }',
+        '.highlight pre { display: inline; white-space: pre-wrap; }',
+        '.diff-old { background-color: rgba(255, 0, 0, 0.25); }',
+        '.diff-new { background-color: rgba(0, 255, 0, 0.20); }',
+        '.diff-intra-del { border: solid 1px #cc0000; }',
+        '.diff-intra-chg { border: solid 1px #cccc00; }',
+        '.diff-intra-ins { border: solid 1px #00cc00; }',
+        '.mark-kept { color: #66d9ef; border: solid 1px; }',
+        '.mark-ins { color: #a6e22e; border: solid 1px; }',
+        '.mark-del { color: #f92672; border: solid 1px; }',
+        '.mark-chg { color: #e6db74; border: solid 1px; }',
+        '.diff { font-size: 0.875em; }',
+        '.diff td { padding: 2px; }',
+        '.diff td pre { margin: 0; }',
+        'table.diff tbody tr:nth-child(2n) { background: inherit; }',
+    ]
     return '\n'.join(parts) + '\n'
 
 def get_pygments_styles(fmt=None) -> str:

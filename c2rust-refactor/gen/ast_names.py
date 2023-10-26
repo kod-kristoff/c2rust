@@ -14,11 +14,10 @@ def do_ast_names_impl(d):
     yield '    match self {'
     for v, path in variants_paths(d):
         yield '      &%s => {' % struct_pattern(v, path)
-        yield '        "%s".to_string()' % v.name
+        yield f'        "{v.name}".to_string()'
         if isinstance(d, (Struct)):
-            kind_field = find_kind_field(d)
-            if kind_field:
-                yield '        + ":" + &self.%s.ast_name()' % kind_field
+            if kind_field := find_kind_field(d):
+                yield f'        + ":" + &self.{kind_field}.ast_name()'
         yield '      }'
     yield '    }'
     yield '  }'
@@ -27,7 +26,7 @@ def do_ast_names_impl(d):
 @linewise
 def generate(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:

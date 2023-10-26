@@ -27,7 +27,7 @@ def do_impl(s, field_name):
     if field_name is not None:
         yield 'impl GetNodeId for %s {' % s.name
         yield '  fn get_node_id(&self) -> NodeId {'
-        yield '    self.%s' % field_name
+        yield f'    self.{field_name}'
         yield '  }'
         yield '}'
 
@@ -43,33 +43,23 @@ def find_id_field(s):
     if 'no_node_id' in s.attrs:
         return None
 
-    marked_fields = []
-    for f in s.fields:
-        if 'node_id' in f.attrs:
-            marked_fields.append(f.name)
+    marked_fields = [f.name for f in s.fields if 'node_id' in f.attrs]
     if len(marked_fields) == 1:
         return marked_fields[0]
     elif len(marked_fields) > 1:
         raise ValueError('struct %s has %d fields marked #[node_id] (expected 0 or 1)' %
                 (s.name, len(marked_fields)))
 
-    for f in s.fields:
-        if f.name == 'id':
-            return f.name
-
-    return None
+    return next((f.name for f in s.fields if f.name == 'id'), None)
 
 @linewise
 def generate(decls):
     yield '// AUTOMATICALLY GENERATED - DO NOT EDIT'
-    yield '// Produced %s by process_ast.py' % (datetime.now(),)
+    yield f'// Produced {datetime.now()} by process_ast.py'
     yield ''
 
     for d in decls:
-        if isinstance(d, Struct):
-            field_name = find_id_field(d)
-        else:
-            field_name = None
+        field_name = find_id_field(d) if isinstance(d, Struct) else None
         yield do_impl(d, field_name)
 
 def has_get_node_id_impl(d):

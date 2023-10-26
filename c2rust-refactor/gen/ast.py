@@ -8,7 +8,7 @@ Field = namedtuple('Field', ('name', 'attrs'))
 
 def variants_paths(se):
     if isinstance(se, Enum):
-        return [(v, '%s::%s' % (se.name, v.name)) for v in se.variants]
+        return [(v, f'{se.name}::{v.name}') for v in se.variants]
     elif isinstance(se, Struct):
         return [(se, se.name)]
     else:

@@ -61,7 +61,7 @@ def translate_example(args):
     assert '/' not in name
     translate_py = os.path.join(ROOT_DIR, 'examples', name, 'translate.py')
     python3[translate_py]()
-    return '<!-- ran %s to translate %s -->' % (translate_py, name)
+    return f'<!-- ran {translate_py} to translate {name} -->'
 
 
 KNOWN_GENERATORS = {

@@ -83,12 +83,12 @@ def do_exec(args: argparse.Namespace):
     if args.work_dir is not None:
         if os.path.exists(args.work_dir):
             if args.force:
-                print('removing old work dir `%s`' % args.work_dir)
+                print(f'removing old work dir `{args.work_dir}`')
                 shutil.rmtree(args.work_dir)
             else:
-                print('error: work directory `%s` already exists' % args.work_dir)
+                print(f'error: work directory `{args.work_dir}` already exists')
                 sys.exit(1)
-        print('copy project `%s` to work dir `%s`' % (args.project_dir, args.work_dir))
+        print(f'copy project `{args.project_dir}` to work dir `{args.work_dir}`')
         shutil.copytree(args.project_dir, args.work_dir)
         work_dir = args.work_dir
     else:
@@ -183,7 +183,7 @@ def do_render(args: argparse.Namespace):
                 f.write('\n\n')
 
                 print('rendering diff #%d' % (diff_idx + 1))
-                print('  diff options: %s' % (b.opts,))
+                print(f'  diff options: {b.opts}')
                 diff_text = literate.render.render_diff(b.old, b.new, b.opts)
                 if diff_text is not None:
                     collapse = b.opts['collapse-diff']
@@ -194,13 +194,13 @@ def do_render(args: argparse.Namespace):
                         f.write('\n<hr></details>\n\n')
                 diff_idx += 1
             else:
-                raise TypeError('expected Text or ScriptDiff, got %s' % (type(b),))
+                raise TypeError(f'expected Text or ScriptDiff, got {type(b)}')
 
         if args.playground_js is not None:
             j = build_result_json(blocks)
             f.write('<script>var C2RUST_REFACTOR_JSON = %s;</script>\n' %
                     json.dumps(j, indent=2))
-            f.write('<script src="%s"></script>' % args.playground_js)
+            f.write(f'<script src="{args.playground_js}"></script>')
             f.write('<script>initRefactorPlaygroundButtons();</script>')
 
 def do_playground(args: argparse.Namespace):
@@ -251,6 +251,6 @@ def main(argv: List[str]):
         do_playground_styles(args)
     else:
         if args.cmd is not None:
-            print('unknown subcommand `%s`' % args.cmd)
+            print(f'unknown subcommand `{args.cmd}`')
         ap.print_usage()
         sys.exit(1)
